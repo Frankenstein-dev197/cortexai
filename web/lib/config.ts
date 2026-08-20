@@ -5,5 +5,5 @@ export const links = {
   signup: `${APP_URL}/signup`,
   login: `${APP_URL}/login`,
   app: APP_URL,
-  github: "https://github.com/Frankenstein-dev197/cortex-ai",
+  github: "https://github.com/Frankenstein-dev197/cortexai",
 };

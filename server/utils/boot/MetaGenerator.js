@@ -81,7 +81,7 @@ class MetaGenerator {
       { tag: "meta", props: { property: "og:type", content: "website" } },
       {
         tag: "meta",
-        props: { property: "og:url", content: "https://github.com/Frankenstein-dev197/cortex-ai" },
+        props: { property: "og:url", content: "https://github.com/Frankenstein-dev197/cortexai" },
       },
       {
         tag: "meta",
@@ -113,7 +113,7 @@ class MetaGenerator {
       },
       {
         tag: "meta",
-        props: { property: "twitter:url", content: "https://github.com/Frankenstein-dev197/cortex-ai" },
+        props: { property: "twitter:url", content: "https://github.com/Frankenstein-dev197/cortexai" },
       },
       {
         tag: "meta",

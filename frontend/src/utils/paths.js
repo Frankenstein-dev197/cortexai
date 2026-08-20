@@ -55,22 +55,22 @@ export default {
     },
   },
   github: () => {
-    return "https://github.com/Frankenstein-dev197/cortex-ai";
+    return "https://github.com/Frankenstein-dev197/cortexai";
   },
   discord: () => {
-    return "https://github.com/Frankenstein-dev197/cortex-ai/discussions";
+    return "https://github.com/Frankenstein-dev197/cortexai/discussions";
   },
   docs: (path = "") => {
-    return `https://github.com/Frankenstein-dev197/cortex-ai/tree/main/docs${path}`;
+    return `https://github.com/Frankenstein-dev197/cortexai/tree/main/docs${path}`;
   },
   chatModes: () => {
-    return "https://github.com/Frankenstein-dev197/cortex-ai/tree/main/docs";
+    return "https://github.com/Frankenstein-dev197/cortexai/tree/main/docs";
   },
   mailToMintplex: () => {
-    return "https://github.com/Frankenstein-dev197/cortex-ai/issues";
+    return "https://github.com/Frankenstein-dev197/cortexai/issues";
   },
   hosting: () => {
-    return "https://github.com/Frankenstein-dev197/cortex-ai";
+    return "https://github.com/Frankenstein-dev197/cortexai";
   },
   workspace: {
     chat: (slug, options = {}) => {
@@ -239,17 +239,17 @@ export default {
       return `${this.website()}/me`;
     },
     noPrivateItems: () => {
-      return "https://github.com/Frankenstein-dev197/cortex-ai/tree/main/docs";
+      return "https://github.com/Frankenstein-dev197/cortexai/tree/main/docs";
     },
   },
 
   // All docs links point to the Cortex AI repository docs.
   documentation: {
     mobileIntroduction: () => {
-      return "https://github.com/Frankenstein-dev197/cortex-ai/tree/main/docs";
+      return "https://github.com/Frankenstein-dev197/cortexai/tree/main/docs";
     },
     contextWindows: () => {
-      return "https://github.com/Frankenstein-dev197/cortex-ai/tree/main/docs";
+      return "https://github.com/Frankenstein-dev197/cortexai/tree/main/docs";
     },
   },
 
