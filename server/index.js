@@ -11,6 +11,7 @@ const cors = require("cors");
 const path = require("path");
 const { reqBody } = require("./utils/http");
 const { systemEndpoints } = require("./endpoints/system");
+const { oauthEndpoints } = require("./endpoints/oauth");
 const { workspaceEndpoints } = require("./endpoints/workspaces");
 const { chatEndpoints } = require("./endpoints/chat");
 const { embeddedEndpoints } = require("./endpoints/embed");
@@ -26,9 +27,7 @@ const { bootHTTP, bootSSL } = require("./utils/boot");
 const { workspaceThreadEndpoints } = require("./endpoints/workspaceThreads");
 const { documentEndpoints } = require("./endpoints/document");
 const { agentWebsocket } = require("./endpoints/agentWebsocket");
-const {
-  agentSkillWhitelistEndpoints,
-} = require("./endpoints/agentSkillWhitelist");
+const { agentSkillWhitelistEndpoints } = require("./endpoints/agentSkillWhitelist");
 const { agentFileServerEndpoints } = require("./endpoints/agentFileServer");
 const { experimentalEndpoints } = require("./endpoints/experimental");
 const { browserExtensionEndpoints } = require("./endpoints/browserExtension");
@@ -39,19 +38,14 @@ const { mobileEndpoints } = require("./endpoints/mobile");
 const { webPushEndpoints } = require("./endpoints/webPush");
 const { telegramEndpoints } = require("./endpoints/telegram");
 const { scheduledJobEndpoints } = require("./endpoints/scheduledJobs");
-const {
-  outlookAgentEndpoints,
-} = require("./endpoints/utils/outlookAgentUtils");
-const {
-  googleAgentSkillEndpoints,
-} = require("./endpoints/utils/googleAgentSkillEndpoints");
+const { outlookAgentEndpoints } = require("./endpoints/utils/outlookAgentUtils");
+const { googleAgentSkillEndpoints } = require("./endpoints/utils/googleAgentSkillEndpoints");
 const { memoryEndpoints } = require("./endpoints/memory");
 const { httpLogger } = require("./middleware/httpLogger");
 const app = express();
 const apiRouter = express.Router();
 const FILE_LIMIT = "3GB";
 
-// Only log HTTP requests in development mode and if the ENABLE_HTTP_LOGGER environment variable is set to true
 if (
   process.env.NODE_ENV === "development" &&
   !!process.env.ENABLE_HTTP_LOGGER
@@ -65,21 +59,17 @@ if (
 app.use(cors({ origin: true }));
 app.use(bodyParser.text({ limit: FILE_LIMIT }));
 app.use(bodyParser.json({ limit: FILE_LIMIT }));
-app.use(
-  bodyParser.urlencoded({
-    limit: FILE_LIMIT,
-    extended: true,
-  })
-);
+app.use(bodyParser.urlencoded({ limit: FILE_LIMIT, extended: true }));
 
 if (!!process.env.ENABLE_HTTPS) {
   bootSSL(app, process.env.SERVER_PORT || 3001);
 } else {
-  require("@mintplex-labs/express-ws").default(app); // load WebSockets in non-SSL mode.
+  require("@mintplex-labs/express-ws").default(app);
 }
 
 app.use("/api", apiRouter);
 systemEndpoints(apiRouter);
+oauthEndpoints(apiRouter);
 extensionEndpoints(apiRouter);
 workspaceEndpoints(apiRouter);
 workspaceThreadEndpoints(apiRouter);
@@ -105,10 +95,7 @@ scheduledJobEndpoints(apiRouter);
 outlookAgentEndpoints(apiRouter);
 googleAgentSkillEndpoints(apiRouter);
 memoryEndpoints(apiRouter);
-// Externally facing embedder endpoints
 embeddedEndpoints(apiRouter);
-
-// Externally facing browser extension endpoints
 browserExtensionEndpoints(apiRouter);
 
 if (process.env.NODE_ENV !== "development") {
@@ -119,7 +106,6 @@ if (process.env.NODE_ENV !== "development") {
     express.static(path.resolve(__dirname, "public"), {
       extensions: ["js"],
       setHeaders: (res) => {
-        // Disable I-framing of entire site UI
         res.removeHeader("X-Powered-By");
         res.setHeader("X-Frame-Options", "DENY");
       },
@@ -131,7 +117,7 @@ if (process.env.NODE_ENV !== "development") {
     response.send("User-agent: *\nDisallow: /").end();
   });
 
-  app.get("/manifest.json", async function (_, response) {
+  app.get("/manifest.json", async function (request, response) {
     IndexPage.generateManifest(response);
     return;
   });
@@ -141,7 +127,6 @@ if (process.env.NODE_ENV !== "development") {
     return;
   });
 } else {
-  // Debug route for development connections to vectorDBs
   apiRouter.post("/v/:command", async (request, response) => {
     try {
       const VectorDb = getVectorDbClass();
@@ -153,13 +138,11 @@ if (process.env.NODE_ENV !== "development") {
         });
         return;
       }
-
       try {
         const body = reqBody(request);
         const resBody = await VectorDb[command](body);
         response.status(200).json({ ...resBody });
       } catch (e) {
-        // console.error(e)
         console.error(JSON.stringify(e));
         response.status(500).json({ error: e.message });
       }
@@ -175,6 +158,4 @@ app.all("*", function (_, response) {
   response.sendStatus(404);
 });
 
-// In non-https mode we need to boot at the end since the server has not yet
-// started and is `.listen`ing.
 if (!process.env.ENABLE_HTTPS) bootHTTP(app, process.env.SERVER_PORT || 3001);
