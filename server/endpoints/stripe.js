@@ -6,6 +6,29 @@ function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
+async function getOrCreateCustomer(stripe, supabaseUser, cortexUser) {
+  const email = supabaseUser.email || undefined;
+  if (email) {
+    const existing = await stripe.customers.list({ email, limit: 100 });
+    const owned = existing.data.find(
+      (customer) => customer.metadata?.supabase_user_id === supabaseUser.id
+    );
+    if (owned) return owned;
+  }
+
+  return stripe.customers.create({
+    email,
+    name:
+      supabaseUser.user_metadata?.full_name ||
+      supabaseUser.user_metadata?.name ||
+      undefined,
+    metadata: {
+      supabase_user_id: supabaseUser.id,
+      cortex_user_id: String(cortexUser.id),
+    },
+  });
+}
+
 function stripeEndpoints(apiRouter) {
   const stripe = getStripe();
   if (!stripe) {
@@ -25,18 +48,7 @@ function stripeEndpoints(apiRouter) {
         process.env.CORTEX_PUBLIC_URL ||
         "http://localhost:3000"
       ).replace(/\/$/, "");
-
-      const customer = await stripe.customers.create({
-        email: req.supabaseUser.email || undefined,
-        name:
-          req.supabaseUser.user_metadata?.full_name ||
-          req.supabaseUser.user_metadata?.name ||
-          undefined,
-        metadata: {
-          supabase_user_id: req.supabaseUser.id,
-          cortex_user_id: String(req.cortexUser.id),
-        },
-      });
+      const customer = await getOrCreateCustomer(stripe, req.supabaseUser, req.cortexUser);
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -69,16 +81,10 @@ function stripeEndpoints(apiRouter) {
   apiRouter.post("/billing/portal", supabaseAuth, async (req, res) => {
     try {
       const customerId = String(req.body?.customerId || "").trim();
-      if (!customerId) {
-        return res.status(400).json({ error: "A Stripe customer is required." });
-      }
+      if (!customerId) return res.status(400).json({ error: "A Stripe customer is required." });
 
-      // Never trust a customer ID supplied by the browser. Verify that the
-      // Stripe customer belongs to the currently authenticated Supabase user.
       const customer = await stripe.customers.retrieve(customerId);
-      if (customer.deleted) {
-        return res.status(404).json({ error: "Stripe customer not found." });
-      }
+      if (customer.deleted) return res.status(404).json({ error: "Stripe customer not found." });
       if (customer.metadata?.supabase_user_id !== req.supabaseUser.id) {
         return res.status(403).json({ error: "Stripe customer does not belong to this account." });
       }
@@ -104,14 +110,7 @@ function stripeEndpoints(apiRouter) {
     }
 
     try {
-      // The route is registered before the global JSON parser, so req.body is
-      // the exact Buffer signed by Stripe.
-      const event = stripe.webhooks.constructEvent(
-        req.body,
-        signature,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-
+      const event = stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
       switch (event.type) {
         case "checkout.session.completed":
         case "customer.subscription.created":
@@ -124,7 +123,6 @@ function stripeEndpoints(apiRouter) {
         default:
           break;
       }
-
       return res.json({ received: true });
     } catch (error) {
       console.error("Stripe webhook signature verification failed:", error.message);
