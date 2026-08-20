@@ -9,6 +9,34 @@ import {
 } from "../../../utils/constants";
 import useLogo from "../../../hooks/useLogo";
 
+function OAuthButtons() {
+  const startOAuth = (provider) => {
+    window.location.assign(`/api/auth/${provider}`);
+  };
+
+  return (
+    <div className="w-full max-w-[300px] px-0 mt-4 flex flex-col gap-2">
+      <div className="text-zinc-500 text-xs text-center">or continue with</div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => startOAuth("google")}
+          className="flex-1 h-[38px] rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 text-sm font-medium"
+        >
+          Continue with Google
+        </button>
+        <button
+          type="button"
+          onClick={() => startOAuth("github")}
+          className="flex-1 h-[38px] rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 text-sm font-medium"
+        >
+          Continue with GitHub
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PasswordModal({ mode = "single" }) {
   const { loginLogo, isCustomLogo } = useLogo();
   return (
@@ -20,6 +48,7 @@ export default function PasswordModal({ mode = "single" }) {
         style={{ objectFit: "contain" }}
       />
       {mode === "single" ? <SingleUserAuth /> : <MultiUserAuth />}
+      {mode === "multi" && <OAuthButtons />}
     </div>
   );
 }
@@ -35,8 +64,6 @@ export function usePasswordModal(notry = false) {
     async function checkAuthReq() {
       if (!window) return;
 
-      // If the last validity check is still valid
-      // we can skip the loading.
       if (!System.needsAuthCheck() && notry === false) {
         setAuth({
           loading: false,
@@ -78,8 +105,6 @@ export function usePasswordModal(notry = false) {
           return;
         }
       } else {
-        // Running token check in single user Auth mode.
-        // If Single user Auth is disabled - skip check
         const requiresAuth = settings?.RequiresAuth || false;
         if (!requiresAuth) {
           setAuth({
