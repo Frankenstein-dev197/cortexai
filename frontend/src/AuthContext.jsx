@@ -20,12 +20,6 @@ export function AuthProvider(props) {
 
   const navigate = useNavigate();
 
-  /* NOTE:
-   * 1. There's no reason for these helper functions to be stateful. They could
-   * just be regular funcs or methods on a basic object.
-   * 2. These actions are not being invoked anywhere in the
-   * codebase, dead code.
-   */
   const [actions] = useState({
     updateUser: (user, authToken = "") => {
       localStorage.setItem(AUTH_USER, JSON.stringify(user));
@@ -41,12 +35,32 @@ export function AuthProvider(props) {
     },
   });
 
-  /*
-   * On initial mount and whenever the token changes, fetch a new user object
-   * If the user is suspended, (success === false and data === null) logout the user and redirect to the login page
-   * If success is true and data is not null, update the user object in the store (multi-user mode only)
-   * If success is true and data is null, do nothing (single-user mode only) with or without password protection
-   */
+  // OAuth callbacks return the short-lived session token in the URL fragment.
+  // Fragments are not sent as HTTP requests, so the token does not leak through
+  // the query string or Referer header. Consume it once and immediately clean
+  // the address bar.
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) return;
+
+    const params = new URLSearchParams(hash);
+    const oauthToken = params.get("oauth_token");
+    const oauthError = params.get("oauth_error");
+
+    if (oauthToken) {
+      localStorage.setItem(AUTH_TOKEN, oauthToken);
+      localStorage.removeItem(AUTH_TIMESTAMP);
+      setStore((prev) => ({ ...prev, authToken: oauthToken }));
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      return;
+    }
+
+    if (oauthError) {
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      console.error("OAuth login failed:", oauthError);
+    }
+  }, []);
+
   useEffect(() => {
     async function refreshUser() {
       const { success, user: refreshedUser } = await System.refreshUser();
