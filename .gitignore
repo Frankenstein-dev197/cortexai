@@ -1,0 +1,20 @@
+v-env
+.env
+!.env.example
+
+node_modules
+__pycache__
+v-env
+.DS_Store
+aws_cf_deploy_anything_llm.json
+yarn.lock
+*.bak
+.idea
+
+# Cortex: local dev envs and runtime storage
+.env.development
+.env.local
+server/storage/
+web/.next/
+web/node_modules/
+web/out/

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="460" height="100">
+  <g fill="none" stroke="#F5F5F5" stroke-width="5">
+    <polygon points="50,8 86,29 86,71 50,92 14,71 14,29"/>
+    <line x1="50" y1="50" x2="50" y2="8"/>
+    <line x1="50" y1="50" x2="86" y2="71"/>
+    <line x1="50" y1="50" x2="14" y2="71"/>
+  </g>
+  <circle cx="50" cy="8" r="6" fill="#F5F5F5"/>
+  <circle cx="86" cy="71" r="6" fill="#F5F5F5"/>
+  <circle cx="14" cy="71" r="6" fill="#F5F5F5"/>
+  <circle cx="50" cy="50" r="9" fill="#6366F1"/>
+  <text x="112" y="68" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="6" fill="#F5F5F5">CORTEX</text>
+  <text x="328" y="68" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="6" fill="#6366F1">AI</text>
+</svg>
