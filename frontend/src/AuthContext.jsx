@@ -1,44 +1,54 @@
-import React, { createContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "./lib/supabase";
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { supabase } from './lib/supabase';
 
-export const AuthContext = createContext(null);
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const navigate = useNavigate();
-  const [store, setStore] = useState({ user: null, session: null, loading: true });
+  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setStore({ user: data.session?.user ?? null, session: data.session ?? null, loading: false });
+      if (!mounted) return;
+      setSession(data.session ?? null);
+      setUser(data.session?.user ?? null);
+      setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
-      setStore({ user: session?.user ?? null, session: session ?? null, loading: false });
-      if (event === "SIGNED_OUT") navigate("/login");
+      setSession(nextSession ?? null);
+      setUser(nextSession?.user ?? null);
+      setLoading(false);
     });
 
     return () => {
       mounted = false;
-      listener.subscription.unsubscribe();
+      subscription.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
-  const actions = {
-    signOut: async () => {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    },
-    signInWithProvider: async (provider) => {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: `${window.location.origin}/login` },
-      });
-      if (error) throw error;
-    },
-  };
+  const value = useMemo(() => ({
+    session,
+    user,
+    loading,
+    isAuthenticated: Boolean(session?.user),
+    signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+    signUp: (email, password, options = {}) => supabase.auth.signUp({ email, password, options }),
+    signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
+    signInWithGitHub: () => supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } }),
+    resetPassword: (email) => supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` }),
+    updatePassword: (password) => supabase.auth.updateUser({ password }),
+    signOut: () => supabase.auth.signOut(),
+  }), [session, user, loading]);
 
-  return <AuthContext.Provider value={{ store, actions, supabase }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used inside AuthProvider');
+  return context;
 }
